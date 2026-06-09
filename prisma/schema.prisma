@@ -1,0 +1,39 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model GuildSettings {
+  guildId         String   @id @map("guild_id")
+  appealChannelId String?  @map("appeal_channel_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("guild_settings")
+}
+
+model Timeout {
+  id           Int      @id @default(autoincrement())
+  guildId      String   @map("guild_id")
+  userId       String   @map("user_id")
+  timeoutStart DateTime @map("timeout_start")
+  timeoutEnd   DateTime @map("timeout_end")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("timeouts")
+}
+
+model Appeal {
+  id        Int      @id @default(autoincrement())
+  guildId   String   @map("guild_id")
+  userId    String   @map("user_id")
+  message   String
+  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("appeals")
+}

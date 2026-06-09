@@ -1,0 +1,25 @@
+# Node dependency directory
+node_modules/
+
+# TypeScript build output
+dist/
+
+# Environment variables
+.env
+.env.local
+
+# SQLite local databases and logs
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
