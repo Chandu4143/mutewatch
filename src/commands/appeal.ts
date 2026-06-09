@@ -1,6 +1,7 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { prisma } from '../db.js';
 import { AppealService } from '../services/appealService.js';
+import { TimeoutScheduler } from '../services/timeoutScheduler.js';
 
 export const data = new SlashCommandBuilder()
   .setName('appeal')
@@ -10,6 +11,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
   const userId = interaction.user.id;
 
   try {
+    // Sync timeouts first to ensure fresh data
+    await TimeoutScheduler.syncUserActiveTimeouts(interaction.client, userId);
+
     // 1. Fetch active timeouts
     const activeTimeouts = await prisma.timeout.findMany({
       where: {

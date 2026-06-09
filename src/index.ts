@@ -22,7 +22,8 @@ const client = new Client({
   partials: [
     Partials.Channel,                      // Required for DM channels (especially in v14)
     Partials.Message,                      // Required to receive uncached messages
-    Partials.User                          // Required to fetch uncached users
+    Partials.User,                         // Required to fetch uncached users
+    Partials.GuildMember                   // Required to receive guildMemberUpdate for uncached members
   ]
 });
 

@@ -3,6 +3,7 @@ import { commands } from '../commands/index.js';
 import { prisma } from '../db.js';
 import { DMService } from '../services/dmService.js';
 import { AppealService } from '../services/appealService.js';
+import { TimeoutScheduler } from '../services/timeoutScheduler.js';
 
 export const name = Events.InteractionCreate;
 
@@ -40,6 +41,9 @@ export async function execute(interaction: Interaction) {
       const userId = interaction.user.id;
 
       try {
+        // Sync timeouts first to ensure fresh data
+        await TimeoutScheduler.syncUserActiveTimeouts(client, userId);
+
         const timeout = await prisma.timeout.findFirst({
           where: { guildId, userId, active: true, timeoutEnd: { gt: new Date() } },
         });

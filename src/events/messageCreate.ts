@@ -2,6 +2,7 @@ import { Message, Events, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBui
 import { prisma } from '../db.js';
 import { DMService } from '../services/dmService.js';
 import { getHelpMessage } from '../commands/help.js';
+import { TimeoutScheduler } from '../services/timeoutScheduler.js';
 
 export const name = Events.MessageCreate;
 
@@ -26,6 +27,9 @@ export async function execute(message: Message) {
   // Command: Status
   if (content === 'status' || content === '/status') {
     try {
+      // Sync timeouts first to ensure fresh data
+      await TimeoutScheduler.syncUserActiveTimeouts(client, userId);
+
       const activeTimeouts = await prisma.timeout.findMany({
         where: {
           userId,
@@ -81,6 +85,9 @@ export async function execute(message: Message) {
   // Command: Appeal
   if (content === 'appeal' || content === '/appeal') {
     try {
+      // Sync timeouts first to ensure fresh data
+      await TimeoutScheduler.syncUserActiveTimeouts(client, userId);
+
       const activeTimeouts = await prisma.timeout.findMany({
         where: {
           userId,

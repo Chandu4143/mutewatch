@@ -77,4 +77,75 @@ export class TimeoutScheduler {
       console.log('[TimeoutScheduler] Expiration background worker stopped.');
     }
   }
+
+  /**
+   * Syncs the database state with the actual Discord API state for a specific user
+   * across all guilds the bot shares with them.
+   */
+  static async syncUserActiveTimeouts(client: Client, userId: string): Promise<void> {
+    try {
+      // Loop through all guilds in the cache
+      for (const [guildId, guild] of client.guilds.cache) {
+        try {
+          const member = await guild.members.fetch(userId).catch(() => null);
+          if (!member) continue;
+
+          const isTimedOut = member.communicationDisabledUntilTimestamp && member.communicationDisabledUntilTimestamp > Date.now();
+
+          // Check if we have an active timeout in the database for this guild/user
+          const activeTimeout = await prisma.timeout.findFirst({
+            where: {
+              guildId,
+              userId,
+              active: true,
+              timeoutEnd: { gt: new Date() },
+            },
+          });
+
+          if (isTimedOut) {
+            const endAt = member.communicationDisabledUntil!;
+            
+            if (!activeTimeout) {
+              console.log(`[Sync] Found untracked active timeout for ${member.user.tag} in ${guild.name}. Syncing to DB.`);
+              // Deactivate any old active ones first just in case
+              await prisma.timeout.updateMany({
+                where: { guildId, userId, active: true },
+                data: { active: false },
+              });
+
+              // Create new active timeout
+              await prisma.timeout.create({
+                data: {
+                  guildId,
+                  userId,
+                  timeoutStart: new Date(),
+                  timeoutEnd: endAt,
+                  active: true,
+                },
+              });
+            } else if (activeTimeout.timeoutEnd.getTime() !== endAt.getTime()) {
+              console.log(`[Sync] Timeout duration changed for ${member.user.tag} in ${guild.name}. Updating DB.`);
+              await prisma.timeout.update({
+                where: { id: activeTimeout.id },
+                data: { timeoutEnd: endAt },
+              });
+            }
+          } else {
+            // Member is not timed out, but DB has an active timeout
+            if (activeTimeout) {
+              console.log(`[Sync] Active timeout found in DB but user ${member.user.tag} is not timed out in ${guild.name}. Deactivating in DB.`);
+              await prisma.timeout.update({
+                where: { id: activeTimeout.id },
+                data: { active: false },
+              });
+            }
+          }
+        } catch (innerError) {
+          console.error(`[Sync] Error syncing user ${userId} in guild ${guildId}:`, innerError);
+        }
+      }
+    } catch (error) {
+      console.error(`[Sync] Error syncing active timeouts for user ${userId}:`, error);
+    }
+  }
 }
