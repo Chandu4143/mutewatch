@@ -21,6 +21,7 @@ model Timeout {
   userId       String   @map("user_id")
   timeoutStart DateTime @map("timeout_start")
   timeoutEnd   DateTime @map("timeout_end")
+  reason       String?
   active       Boolean  @default(true)
   createdAt    DateTime @default(now()) @map("created_at")
 
